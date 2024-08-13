@@ -1,33 +1,66 @@
 pipeline {
     agent any
+ 
+    environment {
+        JAVA_HOME = tool name: 'JDK11', type: 'jdk' // Assuming JDK11 is installed
+        PATH = "${env.JAVA_HOME}/bin:${env.PATH}"
+    }
+ 
     stages {
-        // Stage 1: Initialize
-        stage('Build with Maven') {
+        stage('Checkout') {
             steps {
-                echo 'Builduing with Maven...'
+                // Clone the repository
+                git 'https://your-repo-url.git'
             }
         }
-        // Stage 2: Build
+ 
         stage('Build') {
             steps {
-                echo 'Building the project...'
-                sh 'mvn install'
+                // Build the project using Maven
+                sh 'mvn clean compile'
             }
         }
-        // Stage 3: Deploy
+ 
+        stage('Test') {
+            steps {
+                // Run the tests
+                sh 'mvn test'
+            }
+            post {
+                always {
+                    // Archive test results and logs
+                    junit '**/target/surefire-reports/*.xml'
+                }
+            }
+        }
+ 
+        stage('Package') {
+            steps {
+                // Package the application
+                sh 'mvn package'
+            }
+            post {
+                success {
+                    archiveArtifacts artifacts: '**/target/*.jar', fingerprint: true
+                }
+            }
+        }
+ 
         stage('Deploy') {
             when {
-                branch 'main' // Only deploy if we're on the main branch
+                branch 'master' // Only deploy if we're on the main branch
             }
             steps {
                 // Example deployment step, e.g., upload to a server
-                sh 'scp target/your-app.jar user@yourserver:/path/to/deploy/'
+                sh 'scp target/your-app.jar ec2-user@13.202.177.58:/home/ec2-user/artifact'
             }
         }
     }
+ 
     post {
         always {
-            echo 'Pipeline completed!'
+            // Clean up workspace
+            cleanWs()
         }
     }
 }

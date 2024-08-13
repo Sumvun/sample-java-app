@@ -16,8 +16,12 @@ pipeline {
         }
         // Stage 3: Deploy
         stage('Deploy') {
+            when {
+                branch 'main' // Only deploy if we're on the main branch
+            }
             steps {
-                echo 'Deploying the application...'
+                // Example deployment step, e.g., upload to a server
+                sh 'scp target/your-app.jar user@yourserver:/path/to/deploy/'
             }
         }
     }
